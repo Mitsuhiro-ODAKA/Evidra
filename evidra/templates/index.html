@@ -1,0 +1,137 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Evidra</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- 1920x1080固定のため、ズーム/スケールはCSS側で調整 -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <!-- Mermaid: 図の描画 -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    // Mermaidの初期化設定。フローチャートはTop-Downで描画。
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header class="brand">
+      <!-- ロゴ画像（静的ファイル）。パスは /static/logo/logo.png -->
+      <img src="{% static 'logo/logo.png' %}" alt="Evidra logo" class="brand-logo" />
+
+      <div class="brand-text">
+        <h1 class="app-title">Evidra</h1>
+        <p class="app-subtitle">Evidra creates structured strategies powered by AI4EBP (AI for Evidence-Based Practice) Engine.</p>
+      </div>
+      <div class="actions">
+        <button id="startBtn" disabled>解析開始</button>
+        <button id="cancelBtn" disabled>キャンセル</button>
+      </div>
+    </header>
+
+    <section class="status-row">
+      <!-- ホームベース形の五角形（CSSで表現） -->
+      <div class="pentagon" id="step1">
+        <span>① データ駆動型因果探索</span>
+        <div class="state" id="state1">未実行</div>
+      </div>
+      <div class="pentagon" id="step2">
+        <span>② 背景知識による妥当性確認</span>
+        <div class="state" id="state2">未実行</div>
+      </div>
+      <div class="pentagon" id="step3">
+        <span>③ データ・知識融合モデル</span>
+        <div class="state" id="state3">未実行</div>
+      </div>
+    </section>
+
+    <section class="lower">
+      <div class="left-pane">
+        <div class="card">
+          <h3>観測データアップロード（CSV/XLSX, ≤1GB）</h3>
+          <input type="file" id="dataFile" accept=".csv,.xlsx" />
+          <div id="dataWarning" class="warning"></div>
+          <div id="dataPreview" class="preview"></div>
+        </div>
+        <div class="card">
+          <h3>RAGドキュメント（PDF 1点, ≤1GB）</h3>
+          <input type="file" id="pdfFile" accept="application/pdf" />
+          <div id="pdfInfo" class="info"></div>
+        </div>
+        <div class="card">
+          <h3>前処理オプション</h3>
+          <label><input type="checkbox" id="pre_impute" /> 欠損補間（前方/線形）</label>
+          <label><input type="checkbox" id="pre_resample" /> 等間隔化（周波数推定）</label>
+          <label><input type="checkbox" id="pre_diff" /> 差分化（ADFで必要な場合）</label>
+          <label><input type="checkbox" id="pre_standardize" checked disabled /> 標準化（既定ON）</label>
+        </div>
+      </div>
+
+      <div class="right-pane">
+        <div class="card">
+          <h3>手法/パラメータ</h3>
+          <div>因果手法：<strong>VAR-LiNGAM</strong></div>
+          <label>ラグ p：
+            <select id="param_lag">
+              <option>0</option><option>1</option><option selected>2</option>
+              <option>3</option><option>4</option><option>5</option>
+              <option>6</option><option>7</option><option>8</option>
+              <option>9</option><option>10</option><option>11</option><option>12</option>
+            </select>
+          </label>
+          <label>ブートストラップ回数：
+            <select id="param_boot">
+              <option>50</option><option selected>100</option><option>200</option>
+            </select>
+          </label>
+          <div>seed: <code>42</code></div>
+        </div>
+
+        <div class="card">
+          <h3>進捗</h3>
+          <div id="progressText">待機中</div>
+          <div class="progress">
+            <div id="progressBar"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="artifacts">
+      <div class="card">
+        <h3>Step1 因果グラフ（Mermaid）</h3>
+        <pre class="mermaid" id="mermaid1"></pre>
+      </div>
+      <div class="card">
+        <h3>Step2 評価表</h3>
+        <!-- Markdownとしてではなく、HTMLテーブルとして描画する -->
+        <div id="markdown2" class="md-table"></div>
+      </div>
+      <div class="card">
+        <h3>Step3 融合モデル（Mermaid / Plotly）</h3>
+        <pre class="mermaid" id="mermaid3"></pre>
+        <div id="plotlyLink"></div>
+      </div>
+    </section>
+    <!-- Step4: 因果グラフに関するエージェントQA（LangGraph想定） -->
+    <section class="post-artifacts">
+      <div class="card">
+        <h3>Step4 AIエージェントに質問する</h3>
+        <p class="minor">
+          因果グラフ（Step1/3）と評価表（Step2）を参照して、AIエージェントに質問できます。
+        </p>
+        <div id="chatLog" class="chatlog"></div>
+        <div class="chatinput">
+          <input type="text" id="chatInput" placeholder="例：どのエッジがTYPE3になった理由は？" />
+          <button id="chatSend">送信</button>
+          <button id="chatClear">履歴クリア</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

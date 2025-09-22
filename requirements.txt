@@ -1,0 +1,15 @@
+Django
+pandas
+numpy
+statsmodels
+networkx
+plotly
+mergedeep
+python-dotenv
+uvicorn
+openpyxl
+lingam           
+openai           
+azure-cosmos      
+pdfminer.six   
+scikit-learn      
