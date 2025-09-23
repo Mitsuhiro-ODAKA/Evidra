@@ -37,7 +37,11 @@ class Run(models.Model):
 
 class Edge(models.Model):
     # エッジリスト（因果発見結果および妥当性評価結果）
-    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='edges')
+    run = models.OneToOneField(
+        Run,
+        on_delete=models.CASCADE,
+        related_name='artifact',   # Run.artifact で1件にアクセス
+    )
     source = models.CharField(max_length=128)
     target = models.CharField(max_length=128)
     effect = models.FloatField(default=0.0)                # 係数推定値（標準化表示はしない）

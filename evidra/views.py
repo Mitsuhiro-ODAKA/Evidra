@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import pandas as pd
@@ -11,6 +11,9 @@ from .services.storage import save_local_upload, make_sas_like_local_link
 from .services.preprocessing import validate_header, guess_frequency
 from .tasks import launch_run
 from .services.agent import ask_agent
+
+from django.shortcuts import get_object_or_404
+from .models import Run, Artifact
 
 MAX_UPLOAD_BYTES = 1_000_000_000  # 1GB
 
@@ -145,15 +148,14 @@ def create_run(request):
             "pct": 0,
             "label": "未実行",
             "stage_statuses": {"Step1": "未実行", "Step2": "未実行", "Step3": "未実行"},
-            "overall": "Pending"
-        }
+            "overall": "Pending",
+        },
     )
+    # 直後に非同期起動
+    launch_run(run.id)
 
     # アーティファクト器を用意（保険）
     Artifact.objects.get_or_create(run=run)
-
-    # 非同期ジョブを起動
-    launch_run(run.id)
 
     return JsonResponse({"run_id": run.id})
 
@@ -190,28 +192,17 @@ def run_cancel(request, run_id: int):
 
 # 成果物取得
 def run_artifacts(request, run_id: int):
-    """
-    成果物取得。
-    - 返り値: { mermaid_step1, markdown_table, mermaid_step3, plotly_html_path }
-    """
-    try:
-        run = Run.objects.get(id=run_id)
-    except Run.DoesNotExist:
-        return HttpResponseNotFound("run not found")
+    run = get_object_or_404(Run, id=run_id)
+    # OneToOne 前提：常に 1 件だけ存在
+    art, _ = Artifact.objects.get_or_create(run=run)
 
-    try:
-        art = Artifact.objects.get(run=run)
-    except Artifact.DoesNotExist:
-        art = None
-
-    return JsonResponse({
-        "run_id": run.id,
-        "mermaid_step1": (art.mermaid_step1 if art else ""),
-        "markdown_table": (art.markdown_table if art else ""),
-        "mermaid_step3": (art.mermaid_step3 if art else ""),
-        # Plotly は「公開URL」を返す実装（/media/plots/xxx.html）になっている想定
-        "plotly_html_path": (art.plotly_html_path if art else "")
-    })
+    data = {
+        "mermaid_step1": art.mermaid_step1 or "",
+        "markdown_table": art.markdown_table or "",
+        "mermaid_step3": art.mermaid_step3 or "",
+        "plotly_html_path": art.plotly_html_path or "",
+    }
+    return JsonResponse(data)
 
 # 再実行（完全再現）
 @csrf_exempt

@@ -68,41 +68,35 @@
   }
 
   // ステータス/プログレスの表示更新
-  function updateStatusUI(label, pct, stageStatuses) {
-    const labelElm = document.getElementById('statusLabel');
-    if (labelElm) labelElm.textContent = label || '';
-    const bar = document.getElementById('progressBar');
-    if (bar) {
-      bar.style.width = `${Math.min(100, Math.max(0, pct || 0))}%`;
-      bar.setAttribute('aria-valuenow', String(pct || 0));
-    }
-    // ステージ別の表示を必要なら追加（例：3つのステータスをカード下に表示 など）
-    // 本サンプルでは省略
+function updateStatusUI(label, pct, stageStatuses) {
+  const labelElm = document.getElementById('statusLabel');
+  if (labelElm) labelElm.textContent = label || '未実行';
+  const bar = document.getElementById('progressBar');
+  if (bar) {
+    const v = Math.min(100, Math.max(0, pct || 0));
+    bar.style.width = v + '%';
+    bar.setAttribute('aria-valuenow', String(v));
   }
+  const ss = stageStatuses || {};
+  const map = { state1: 'Step1', state2: 'Step2', state3: 'Step3' };
+  Object.entries(map).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = ss[key] || '未実行';
+  });
+}
 
   // Mermaid描画（textコード→SVGにレンダリング）
-  async function renderMermaid(elmId, code) {
-    const host = document.getElementById(elmId);
-    if (!host) return;
-    if (!code || !window.mermaid || !window.mermaid.render) {
-      // Mermaidが使えない場合は等幅テキストで代替表示
-      host.textContent = code || '(Mermaidコードが空です)';
-      host.classList.add('mermaid'); // スタイル整える場合
-      return;
-    }
+  async function renderMermaid(elId, code) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    // 完全に上書き
+    el.innerHTML = '';
+    el.removeAttribute('data-processed');   // ← v11 対策：再レンダ抑止フラグを外す
+    el.textContent = code || '';
     try {
-      // Mermaid v11: まず構文検証を試み、通れば render
-      if (typeof window.mermaid.parse === 'function') {
-        window.mermaid.parse(code);
-      }
-      // 一意のIDを割り当ててレンダリング
-      const renderId = `mmd_${elmId}_${Date.now()}`;
-      const { svg } = await window.mermaid.render(renderId, code);
-      host.innerHTML = svg;
+      await mermaid.run({ nodes: [el] });
     } catch (e) {
-      // 構文エラー時はテキストで内容を示す（デバッグ補助）
-      console.error('Mermaid render error:', e);
-      host.textContent = `Mermaid Syntax Error\n\n${code}`;
+      console.warn('Mermaid render error:', e);
     }
   }
 
@@ -271,13 +265,11 @@
     }
     // 解析パラメータ（UIがあればそこから取得。ここでは既定値を例示）
     const params = {
-      method: 'VAR-LiNGAM',
-      lag: 2,
-      boot: 100,
+      lag: parseInt(document.getElementById('param_lag').value, 10),
+      boot: parseInt(document.getElementById('param_boot').value, 10),
       seed: 42,
-      preprocessing: {
-        // 例: { standardize: false, diff: false, fillna: "ffill" }
-      }
+      preprocessing: { standardize: true },
+      edge_threshold: parseFloat(document.getElementById('param_thr').value) || 1e-10
     };
     try {
       const payload = {
@@ -327,19 +319,38 @@
     try {
       const art = await fetchJSON(`/api/run/${runId}/artifacts`);
       // Step1 Mermaid
-      if (art.mermaid_step1) await renderMermaid('mermaid1', art.mermaid_step1);
+      // if (art.mermaid_step1) await renderMermaid('mermaid1', art.mermaid_step1);
       // Step2 評価表
-      if (art.markdown_table) renderMarkdownTable('markdown2', art.markdown_table);
+      if (art.markdown_table) {
+        renderMarkdownTable('markdown2', art.markdown_table);
+      }
+      const lg = document.getElementById('typeLegend');
+      if (lg) {
+        lg.innerHTML = `
+          <strong>TYPE 凡例</strong>
+          <ul>
+            <li>TYPE1：因果なし</li>
+            <li>TYPE2：因果あり・因果の向き同じ・因果の正負同じ</li>
+            <li>TYPE3：因果あり・因果の向き同じ・因果の正負違う</li>
+            <li>TYPE4：因果あり・因果の向き違う・因果の正負同じ</li>
+            <li>TYPE5：因果あり・因果の向き違う・因果の正負違う</li>
+          </ul>`;
+      }
       // Step3 Mermaid
       if (art.mermaid_step3) await renderMermaid('mermaid3', art.mermaid_step3);
-      // Plotly HTML（公開URLが返る想定: /media/plots/xxx.html）
-      const a = document.getElementById('plotlyLink');
-      if (a && art.plotly_html_path) {
-        a.href = art.plotly_html_path;
-        a.target = '_blank';
-        a.textContent = 'Plotly図を開く';
-        a.style.display = '';
-      }
+      // // Plotly HTML（公開URL: /media/plots/xxx.html 等）
+      // const a = document.getElementById('plotlyLink');
+      // if (a) {
+      //   if (art.plotly_html_path && typeof art.plotly_html_path === 'string') {
+      //     a.href = art.plotly_html_path;
+      //     a.target = '_blank';
+      //     a.textContent = 'Plotly図を開く';
+      //     a.style.display = '';
+      //   } else {
+      //     a.removeAttribute('href');
+      //     a.style.display = 'none';
+      //   }
+      // }
     } catch (e) {
       console.warn('loadArtifacts failed:', e);
     }

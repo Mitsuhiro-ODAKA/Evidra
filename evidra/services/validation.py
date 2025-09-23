@@ -7,6 +7,23 @@ from ..utils.rag import search_similar_chunks
 
 load_dotenv()
 
+import re
+
+def _norm_label(s: str) -> str:
+    x = str(s).replace("\u3000", " ").strip()
+    x = re.sub(r"\s+", " ", x)
+    return x
+
+def _dedup_rated(rated):
+    uniq = {}
+    for r in rated:
+        key = (_norm_label(r["source"]), _norm_label(r["target"]))
+        if key not in uniq or abs(r.get("effect", 0.0)) > abs(uniq[key].get("effect", 0.0)):
+            # 正規化を実体にも反映（Step3 へそのまま渡るため）
+            r = {**r, "source": key[0], "target": key[1]}
+            uniq[key] = r
+    return list(uniq.values())
+    
 def get_aoai_client() -> Optional[AzureOpenAI]:
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     key = os.getenv("AZURE_OPENAI_API_KEY")
@@ -117,7 +134,7 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
             "type_code": t,
             "citations": [{"doc_id": c.get("doc_id","-"), "page": c.get("chunk_id", 0), "snippet_id": f"chunk{c.get('chunk_id',0)}"} for c in contexts[:3]] if contexts else []
         })
-    return rated
+    return _dedup_rated(rated)
 
 def build_markdown_table(rated_edges: List[Dict]) -> str:
     """
@@ -135,3 +152,19 @@ def build_markdown_table(rated_edges: List[Dict]) -> str:
         cite = ", ".join([f"{c['doc_id']}#{c['page']}:{c['snippet_id']}" for c in e.get('citations', [])]) or "-"
         lines.append(f"| {e['source']} | {e['target']} | {e['effect']:.3f} | {e['prob']:.2f} | {e['sign']} | {has} | {d} | {s} | TYPE{e['type_code']} | {cite} |")
     return "\n".join(lines)
+    
+# 互換ラッパー：tasks.py が期待する名前とシグネチャ
+def rate_edges(run, edges, rag_doc=None):
+    """
+    tasks.py から呼ばれる想定のラッパー。
+    - edges: [{"source","target","effect","prob","sign",...}]
+    - rag_doc: None なら RAG なし、あれば RAG あり
+    戻り値は evaluate_edges() と同じ構造のリストを返す。
+    """
+    rag_present = rag_doc is not None
+    return evaluate_edges(edges, rag_present=rag_present)
+
+# 互換：Markdown 生成関数名を tasks 側で使いやすく
+def build_markdown_from_rated(rated_edges):
+    return build_markdown_table(rated_edges)
+

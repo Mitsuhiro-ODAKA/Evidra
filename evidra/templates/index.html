@@ -1,52 +1,46 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  {% load static %}
   <meta charset="UTF-8" />
   <title>Evidra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- 1920x1080固定のため、ズーム/スケールはCSS側で調整 -->
-  <link rel="stylesheet" href="/static/css/style.css" />
-  <!-- Mermaid: 図の描画 -->
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20250923" />
+
+  <!-- Mermaid (手動レンダリング; app.js から呼ぶ) -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-  <script>
-    // Mermaidの初期化設定。フローチャートはTop-Downで描画。
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-  </script>
+  <script>mermaid.initialize({ startOnLoad: false, theme: 'default' });</script>
 </head>
 <body>
-  <div class="container">
-    <header class="brand">
-      <!-- ロゴ画像（静的ファイル）。パスは /static/logo/logo.png -->
-      <img src="{% static 'logo/logo.png' %}" alt="Evidra logo" class="brand-logo" />
 
+  <!-- 全幅ヘッダー（濃い青） -->
+  <header class="app-header">
+    <div class="brand">
+      <img src="{% static 'logo/logo.png' %}" alt="Evidra logo" class="brand-logo" />
       <div class="brand-text">
         <h1 class="app-title">Evidra</h1>
-        <p class="app-subtitle">Evidra creates structured strategies powered by AI4EBP (AI for Evidence-Based Practice) Engine.</p>
+        <p class="app-subtitle">
+          Evidra creates structured strategies powered by AI4EBP (AI for Evidence-Based Practice) Engine.<br>
+          The current Evidra is version 1.0.0.
+        </p>
       </div>
-      <div class="actions">
-        <button id="startBtn" disabled>解析開始</button>
-        <button id="cancelBtn" disabled>キャンセル</button>
-      </div>
-    </header>
+    </div>
+  </header>
 
+  <!-- メインコンテナ -->
+  <div class="container">
+
+    <!-- 上段：ステップ表示（必要であればここに別の概要を置いてもOK） -->
     <section class="status-row">
-      <!-- ホームベース形の五角形（CSSで表現） -->
-      <div class="pentagon" id="step1">
-        <span>① データ駆動型因果探索</span>
-        <div class="state" id="state1">未実行</div>
-      </div>
-      <div class="pentagon" id="step2">
-        <span>② 背景知識による妥当性確認</span>
-        <div class="state" id="state2">未実行</div>
-      </div>
-      <div class="pentagon" id="step3">
-        <span>③ データ・知識融合モデル</span>
-        <div class="state" id="state3">未実行</div>
-      </div>
+      <!-- ここはレイアウトだけ。実際の「未実行/処理中/完了」は下の pentagon-row が本番 -->
     </section>
 
-    <section class="lower">
+    <!-- 下段：左（入力）＋右（パラメータ/進捗/成果） -->
+    <section class="lower" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+      <!-- 左ペイン：アップロードと前処理 -->
       <div class="left-pane">
         <div class="card">
           <h3>観測データアップロード（CSV/XLSX, ≤1GB）</h3>
@@ -54,21 +48,26 @@
           <div id="dataWarning" class="warning"></div>
           <div id="dataPreview" class="preview"></div>
         </div>
+
         <div class="card">
           <h3>RAGドキュメント（PDF 1点, ≤1GB）</h3>
           <input type="file" id="pdfFile" accept="application/pdf" />
           <div id="pdfInfo" class="info"></div>
         </div>
+
         <div class="card">
           <h3>前処理オプション</h3>
-          <label><input type="checkbox" id="pre_impute" /> 欠損補間（前方/線形）</label>
-          <label><input type="checkbox" id="pre_resample" /> 等間隔化（周波数推定）</label>
-          <label><input type="checkbox" id="pre_diff" /> 差分化（ADFで必要な場合）</label>
+          <label><input type="checkbox" id="pre_impute" /> 欠損補間（前方/線形）</label><br />
+          <label><input type="checkbox" id="pre_resample" /> 等間隔化（周波数推定）</label><br />
+          <label><input type="checkbox" id="pre_diff" /> 差分化（必要に応じて）</label><br />
           <label><input type="checkbox" id="pre_standardize" checked disabled /> 標準化（既定ON）</label>
         </div>
       </div>
 
+      <!-- 右ペイン：手法/パラメータ → 五角形 → ボタン → 進捗 -->
       <div class="right-pane">
+
+        <!-- 手法/パラメータ -->
         <div class="card">
           <h3>手法/パラメータ</h3>
           <div>因果手法：<strong>VAR-LiNGAM</strong></div>
@@ -80,58 +79,88 @@
               <option>9</option><option>10</option><option>11</option><option>12</option>
             </select>
           </label>
-          <label>ブートストラップ回数：
+          <label style="margin-left:12px;">ブートストラップ回数：
             <select id="param_boot">
-              <option>50</option><option selected>100</option><option>200</option>
+              <option>10</option><option selected>20</option><option>50</option>
             </select>
+          </label><br>
+          <label style="margin-left:12px;">係数しきい値：
+            <input type="number" id="param_thr" step="1e-10" value="1e-10" />
           </label>
           <div>seed: <code>42</code></div>
         </div>
 
+        <!-- 五角形ホームベース（手法/パラメータの直下、進捗の上） -->
+        <div class="pentagon-row">
+          <div class="pentagon"><div class="pentagon-text">① データ駆動型因果探索</div></div>
+          <div class="state" id="state1">未実行</div>
+
+          <div class="pentagon"><div class="pentagon-text">② 背景知識による妥当性確認</div></div>
+          <div class="state" id="state2">未実行</div>
+
+          <div class="pentagon"><div class="pentagon-text">③ データ・知識融合モデリング</div></div>
+          <div class="state" id="state3">未実行</div>
+        </div>
+
+        <!-- 解析開始/キャンセル（右寄せ） -->
+        <div class="action-row action-row--right">
+          <button id="startBtn" class="btn-action" disabled>解析開始</button>
+          <button id="cancelBtn" class="btn-action btn-danger">キャンセル</button>
+        </div>
+
+        <!-- 進捗 -->
         <div class="card">
           <h3>進捗</h3>
-          <div id="progressText">待機中</div>
-          <div class="progress">
-            <div id="progressBar"></div>
-          </div>
+          <div id="statusLabel">未実行</div>
+          <div class="progress"><div id="progressBar"></div></div>
         </div>
 
       </div>
     </section>
 
+    <!-- 成果物 -->
     <section class="artifacts">
-      <div class="card">
+      <!-- <div class="card">
         <h3>Step1 因果グラフ（Mermaid）</h3>
-        <pre class="mermaid" id="mermaid1"></pre>
-      </div>
+        <div class="mermaid-container">
+          <pre class="mermaid" id="mermaid1"></pre>
+        </div>
+      </div>-->
+
       <div class="card">
-        <h3>Step2 評価表</h3>
-        <!-- Markdownとしてではなく、HTMLテーブルとして描画する -->
+        <h3>評価表</h3>
         <div id="markdown2" class="md-table"></div>
+        <!-- TYPE 凡例 -->
+        <div id="typeLegend" class="type-legend"></div>
       </div>
+
       <div class="card">
-        <h3>Step3 融合モデル（Mermaid / Plotly）</h3>
-        <pre class="mermaid" id="mermaid3"></pre>
-        <div id="plotlyLink"></div>
+        <h3>因果グラフ</h3>
+        <div class="mermaid-container">
+          <pre class="mermaid" id="mermaid3"></pre>
+        </div>
+        <!-- Plotly 図のリンク（サーバからURLが返ったら表示） -->
+        <!-- <a id="plotlyLink" href="#" target="_blank" style="display:none;">Plotly図を開く</a> -->
       </div>
     </section>
-    <!-- Step4: 因果グラフに関するエージェントQA（LangGraph想定） -->
+
+    <!-- Step4: 因果グラフQA -->
     <section class="post-artifacts">
       <div class="card">
-        <h3>Step4 AIエージェントに質問する</h3>
-        <p class="minor">
-          因果グラフ（Step1/3）と評価表（Step2）を参照して、AIエージェントに質問できます。
-        </p>
-        <div id="chatLog" class="chatlog"></div>
-        <div class="chatinput">
-          <input type="text" id="chatInput" placeholder="例：どのエッジがTYPE3になった理由は？" />
+        <h3>因果グラフについてAIエージェントに質問する</h3>
+        <p class="minor">評価表と因果グラフとを参照して、AIエージェントに質問できます。</p>
+        <div id="chatLog"></div>
+        <div class="chat-controls">
+          <input type="text" id="chatInput" placeholder="例：XXのエッジがTYPE3になった理由は？" />
           <button id="chatSend">送信</button>
           <button id="chatClear">履歴クリア</button>
         </div>
       </div>
     </section>
-  </div>
 
-  <script src="/static/js/app.js"></script>
+  </div><!-- /.container -->
+
+  <!-- App Script -->
+  <script src="{% static 'js/app.js' %}?v=20250923"></script>
 </body>
 </html>
