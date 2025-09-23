@@ -29,4 +29,6 @@ urlpatterns = [
     
     path('api/health/aoai', views.health_aoai),
     path('api/health/aoai/', views.health_aoai),
+    
+    path('api/upload-sample', views.upload_sample)
 ]

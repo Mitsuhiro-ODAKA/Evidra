@@ -36,17 +36,28 @@ class Run(models.Model):
     finished_at = models.DateTimeField(null=True, blank=True)
 
 class Edge(models.Model):
-    # エッジリスト（因果発見結果および妥当性評価結果）
-    run = models.OneToOneField(
-        Run,
-        on_delete=models.CASCADE,
-        related_name='artifact',   # Run.artifact で1件にアクセス
-    )
-    source = models.CharField(max_length=128)
-    target = models.CharField(max_length=128)
-    effect = models.FloatField(default=0.0)                # 係数推定値（標準化表示はしない）
-    prob = models.FloatField(default=0.0)                  # ブートストラップ出現頻度 (0..1)
-    sign = models.CharField(max_length=1, default='+')     # '+' or '-'
+    run = models.ForeignKey('Run', on_delete=models.CASCADE, related_name='edges')  # ← OneToOne ではなく FK
+    source = models.CharField(max_length=255)
+    target = models.CharField(max_length=255)
+    effect = models.FloatField()
+    prob = models.FloatField()
+    sign = models.CharField(max_length=1)  # '+' or '-'
+    type_code = models.IntegerField(null=True, blank=True)
+    lag = models.IntegerField(null=True, blank=True)  # 使うなら保持
+
+    class Meta:
+        # 以前 run に UNIQUE が付いていた場合は必ず削除
+        # unique_together = ('run',) などがあれば廃止
+        constraints = [
+            models.UniqueConstraint(
+                fields=['run', 'source', 'target', 'lag'],
+                name='uniq_edge_per_run_src_tgt_lag'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['run']),
+            models.Index(fields=['run', 'source', 'target']),
+        ]
 
     # 妥当性評価
     eval_has = models.BooleanField(null=True)              # 因果の有無

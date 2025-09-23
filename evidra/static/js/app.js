@@ -69,20 +69,36 @@
 
   // ステータス/プログレスの表示更新
 function updateStatusUI(label, pct, stageStatuses) {
+  // 上部ラベル
   const labelElm = document.getElementById('statusLabel');
   if (labelElm) labelElm.textContent = label || '未実行';
+
+  // 進捗バー
   const bar = document.getElementById('progressBar');
   if (bar) {
     const v = Math.min(100, Math.max(0, pct || 0));
     bar.style.width = v + '%';
     bar.setAttribute('aria-valuenow', String(v));
   }
+
+  // 五角形のステータス（未実行/処理中/完了）を更新
   const ss = stageStatuses || {};
-  const map = { state1: 'Step1', state2: 'Step2', state3: 'Step3' };
-  Object.entries(map).forEach(([id, key]) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = ss[key] || '未実行';
-  });
+  const keyMap = { 1: 'Step1', 2: 'Step2', 3: 'Step3' };
+
+  for (let k = 1; k <= 3; k++) {
+    const txt = ss[keyMap[k]] || '未実行';
+
+    // 既存の id="state1/2/3"
+    const byId = document.getElementById(`state${k}`);
+    if (byId) byId.textContent = txt;
+
+    // data-step="k" でのフォールバック
+    const byData = document.querySelector(`.pentagon[data-step="${k}"] .state`);
+    if (byData && byData !== byId) byData.textContent = txt;
+  }
+
+  // （必要なら）デバッグ
+  console.debug('[status]', {label, pct, stageStatuses: ss});
 }
 
   // Mermaid描画（textコード→SVGにレンダリング）
@@ -249,6 +265,21 @@ function updateStatusUI(label, pct, stageStatuses) {
       console.log('RAG doc uploaded:', json);
     } catch (e) {
       alert('RAG PDFのアップロードに失敗しました。\n' + e.message);
+      console.error(e);
+    }
+  });
+
+  document.getElementById('sampleBtn')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/upload-sample', { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      currentDatasetId = json.dataset_id;         // ← 取得
+      const startBtn = document.getElementById('startBtn');
+      if (startBtn) startBtn.disabled = !currentDatasetId;
+      renderPreviewTable('dataPreview', json.columns || [], json.head_preview || []);
+    } catch (e) {
+      alert('サンプルの読み込みに失敗しました。コンソールを確認してください。');
       console.error(e);
     }
   });

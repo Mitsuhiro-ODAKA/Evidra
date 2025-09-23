@@ -1,23 +1,29 @@
-Cython<3
-setuptools>=61
-wheel
-gunicorn
-whitenoise
-dj-database-url
-psycopg2-binary
+# --- Web & infra ---
+Django==5.0.6
+gunicorn==21.2.0
+whitenoise==6.7.0
+dj-database-url==2.2.0
+psycopg2-binary==2.9.9
 
-Django
-pandas
-numpy
-scikit-learn
-statsmodels
-networkx
-plotly
-mergedeep
-python-dotenv
-uvicorn
-openpyxl
-lingam
-openai
-azure-cosmos
-pdfminer.six
+# --- Data science stack (VAR-LiNGAMに必要) ---
+numpy==1.26.4
+scipy==1.10.1
+pandas==2.1.4
+scikit-learn==1.3.2
+statsmodels==0.14.2
+networkx==3.2.1
+lingam==1.8.2
+
+# --- Viz / IO ---
+plotly==5.22.0
+openpyxl==3.1.2
+pdfminer.six==20231228
+
+# --- Azure/OpenAI etc. ---
+openai==1.51.0
+azure-cosmos==4.7.0
+python-dotenv==1.0.1
+
+# --- Optional small helpers ---
+mergedeep==1.3.4
+uvicorn==0.30.1

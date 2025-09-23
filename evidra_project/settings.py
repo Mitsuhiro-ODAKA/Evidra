@@ -15,9 +15,11 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'evidra-secret-key')
 
 # 開発中はDEBUG=True。本番はFalseにすること
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+# DEBUG = True
 
 # 許可するホスト名（開発中はワイルドカードでも良い）
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
@@ -100,19 +102,35 @@ TIME_ZONE = 'Asia/Tokyo'
 USE_I18N = True
 USE_TZ = True
 
-# 静的ファイル（CSS/JS）のルート
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'evidra' / 'static']
+# --- ここから静的/メディア設定を置き換え ---
 
-# アップロード先（ローカル開発用。実運用はBlob Storageに差し替え）
-# 静的配信（開発用）
+# 静的ファイルのURL
+STATIC_URL = "/static/"
+
+# 静的ファイルの探索ディレクトリ（アプリ内とプロジェクト直下の両方を見る）
+STATICFILES_DIRS = [
+    BASE_DIR / "evidra" / "static",   # <app>/static
+    BASE_DIR / "static",              # プロジェクト直下（存在すれば）
+]
+
+# 収集先（本番/Renderで collectstatic するときに使用）
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# メディア（ユーザーアップロード）
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"   # Collectstatic 先（任意）
-STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Whitenoise の開発/本番切り分け
+if DEBUG:
+    # 開発中は Finder を使って最新ファイルをそのまま配信（ハッシュ不要）
+    WHITENOISE_AUTOREFRESH = True
+    WHITENOISE_USE_FINDERS = True
+    # ストレージはデフォルトのまま（Manifest にしない）
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+else:
+    # 本番は Manifest（ハッシュ）でキャッシュ効かせる
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # セッション（チャットや実行状態の軽い保持に利用）
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

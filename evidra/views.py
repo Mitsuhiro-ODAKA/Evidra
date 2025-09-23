@@ -356,3 +356,46 @@ def health_aoai(request):
         info["chat_ping"] = {"ok": False, "error_type": type(e).__name__, "error": str(e)[:300]}
 
     return JsonResponse(info)
+
+
+from django.http import HttpResponseNotFound
+from django.conf import settings
+from pathlib import Path
+import pandas as pd
+from .models import Dataset
+
+@csrf_exempt
+def upload_sample(request):
+    """
+    ルート直下 data/予防接種政策ダミーデータ.csv を Dataset として登録し、
+    通常のアップロードAPIと同じレスポンスを返す。
+    """
+    if request.method != 'POST':
+        return HttpResponseBadRequest("POST only")
+
+    sample_path = "data/予防接種政策ダミーデータ.csv"
+    
+    try:
+        df = pd.read_csv(sample_path)
+    except Exception as e:
+        return HttpResponseBadRequest(f"サンプル読み込み失敗: {e}")
+
+    if df.empty:
+        return HttpResponseBadRequest("サンプルが空です")
+
+    ds = Dataset.objects.create(
+        file_path=str(sample_path),
+        columns_json=list(map(str, df.columns)),
+        n_rows=int(len(df)),
+        freq_guess=""
+    )
+
+    head = df.head(10).copy()
+    head = head.applymap(lambda v: v if (isinstance(v, (int,float,str)) or v is None) else str(v))
+    return JsonResponse({
+        "dataset_id": ds.id,
+        "columns": list(map(str, df.columns)),
+        "n_rows": int(len(df)),
+        "head_preview": head.to_dict(orient="records"),
+        "message": "sample_loaded"
+    })

@@ -34,7 +34,7 @@
 
     <!-- 上段：ステップ表示（必要であればここに別の概要を置いてもOK） -->
     <section class="status-row">
-      <!-- ここはレイアウトだけ。実際の「未実行/処理中/完了」は下の pentagon-row が本番 -->
+
     </section>
 
     <!-- 下段：左（入力）＋右（パラメータ/進捗/成果） -->
@@ -45,6 +45,7 @@
         <div class="card">
           <h3>観測データアップロード（CSV/XLSX, ≤1GB）</h3>
           <input type="file" id="dataFile" accept=".csv,.xlsx" />
+          <button id="sampleBtn" class="btn-secondary">サンプルデータ</button>
           <div id="dataWarning" class="warning"></div>
           <div id="dataPreview" class="preview"></div>
         </div>
