@@ -30,16 +30,16 @@ Step2 の結果だけを使い、Mermaid でエッジをスタイリング（TYP
 
 ```mermaid
 flowchart TD
-  subgraph Frontend [Frontend (static)]
+  subgraph Frontend
     A1[app.js] -->|/api/upload-data| V1
     A1 -->|/api/upload-pdf| V2
     A1 -->|/api/run| V3
-    A1 -->|poll /api/run/:id/status| V4
+    A1 -->|poll status| V4
     A1 -->|/api/run/:id/artifacts| V5
     A1 -->|POST /api/chat/:id| V6
   end
 
-  subgraph Views [Django Views]
+  subgraph Views
     V1[/views.upload_data/]
     V2[/views.upload_pdf/]
     V3[/views.create_run/]
@@ -48,14 +48,14 @@ flowchart TD
     V6[/views.chat/]
   end
 
-  subgraph Tasks [Background Pipeline]
+  subgraph Tasks
     T0[launch_run]
     T1[run_pipeline_async]
     T1 -->|Step1| T1a[_var_lingam_edges]
-    T1 -->|Step2| T1b[validation.rate_edges (or fallback)]
+    T1 -->|Step2| T1b[validation.rate_edges]
     T1 -->|Step3| T1c[fusion.build_mermaid_fusion]
     T1 -->|Plotly (opt)| T1d[utils.plotly_export]
-    T1 -->|status update| DB[(Run.status/Artifact)]
+    T1 --> DB[(Run/Artifact 更新)]
   end
 
   subgraph Services
@@ -64,22 +64,22 @@ flowchart TD
     S3[services/fusion.py]
   end
 
-  subgraph Models [DB]
+  subgraph Models
     M1[(Dataset)]
     M2[(RagDoc)]
     M3[(Run)]
     M4[(Edge)]
-    M5[(Artifact 1:1 Run)]
+    M5[(Artifact)]
     M6[(Chat)]
   end
 
-  V3 -->|create Run| M3
-  V3 -->|get_or_create| M5
+  V3 --> M3
+  V3 --> M5
   V3 --> T0 --> T1
   T1a --> M4
   T1b --> M4
   T1b --> S1
-  S1 -->|RAG search| S2
+  S1 --> S2
   T1c --> S3
   T1c --> M5
   T1d --> M5
@@ -87,5 +87,6 @@ flowchart TD
   V5 --> M5
   V6 --> S1
   V6 --> M6
+
 
 ```
