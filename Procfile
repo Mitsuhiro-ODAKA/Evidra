@@ -1,1 +1,1 @@
-web: gunicorn --bind=0.0.0.0:${PORT} myproject.wsgi:application
+web: gunicorn --bind=0.0.0.0:${PORT} evidra_project.wsgi:application
