@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import dj_database_url
 from dotenv import load_dotenv; load_dotenv()
 
 # BASE_DIR はプロジェクトのルートパスを指す
@@ -13,10 +14,18 @@ load_dotenv()
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'evidra-secret-key')
 
 # 開発中はDEBUG=True。本番はFalseにすること
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # 許可するホスト名（開発中はワイルドカードでも良い）
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# CSRF 対応（Render の https://<name>.onrender.com）
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{RENDER_EXTERNAL_HOSTNAME}" for _ in [0] if RENDER_EXTERNAL_HOSTNAME
+]
 
 # Djangoアプリの登録
 INSTALLED_APPS = [
@@ -32,6 +41,7 @@ INSTALLED_APPS = [
 # ミドルウェア設定
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',  # セッション管理（チャットUI等で使用）
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',            # CSRF保護（APIは基本POST想定）
@@ -64,12 +74,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'evidra_project.wsgi.application'
 
 # データベース設定（開発用SQLite。本番はCosmosをservices.storageで扱う想定）
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'evidra.sqlite3',  # BASE_DIR は Path なので / が使えます
+# DB：DATABASE_URL があれば使う（Render の Postgres）
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": str(BASE_DIR / "db.sqlite3"),
+        }
     }
-}
 
 # パスワードバリデータ（開発雛形では標準設定）
 AUTH_PASSWORD_VALIDATORS = [
@@ -97,7 +112,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"   # Collectstatic 先（任意）
 STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
-
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # セッション（チャットや実行状態の軽い保持に利用）
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

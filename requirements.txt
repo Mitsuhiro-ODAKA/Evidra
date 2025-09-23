@@ -2,6 +2,9 @@ Cython<3
 setuptools>=61
 wheel
 gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
 
 Django
 pandas
