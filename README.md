@@ -51,10 +51,10 @@ flowchart TD
   subgraph Tasks
     T0[launch_run]
     T1[run_pipeline_async]
-    T1 -->|Step1| T1a[_var_lingam_edges]
-    T1 -->|Step2| T1b[validation.rate_edges]
-    T1 -->|Step3| T1c[fusion.build_mermaid_fusion]
-    T1 -->|Plotly (opt)| T1d[utils.plotly_export]
+    T1 -->|"Step1"| T1a[_var_lingam_edges]
+    T1 -->|"Step2"| T1b[validation.rate_edges]
+    T1 -->|"Step3"| T1c[fusion.build_mermaid_fusion]
+    T1 -->|"Plotly_optional"| T1d[utils.plotly_export]
     T1 --> DB[(Run/Artifact 更新)]
   end
 
@@ -87,6 +87,5 @@ flowchart TD
   V5 --> M5
   V6 --> S1
   V6 --> M6
-
 
 ```
