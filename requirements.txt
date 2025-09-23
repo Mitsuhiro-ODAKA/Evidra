@@ -1,4 +1,4 @@
-Cython
+Cython<3
 Django
 pandas
 numpy
