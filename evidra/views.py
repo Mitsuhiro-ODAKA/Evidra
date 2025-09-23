@@ -297,7 +297,7 @@ def health_aoai(request):
 
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     key = os.getenv("AZURE_OPENAI_API_KEY")
-    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-06-01")
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01")
     # ?dep=xxx を指定したらそれを優先して疎通テスト
     dep = request.GET.get("dep") or os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
 
