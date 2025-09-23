@@ -2,7 +2,6 @@ Cython<3
 setuptools>=61
 wheel
 gunicorn
-whitenoise
 
 Django
 pandas
