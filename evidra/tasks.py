@@ -16,6 +16,11 @@ from django.utils import timezone
 
 from .models import Run, Dataset, RagDoc, Edge, Artifact
 
+try:
+    from .services.validation import build_markdown_from_rated as build_md_llm
+except Exception:
+    build_md_llm = None
+    
 def _safe_rate_edges(run, edges_dicts, rag_doc):
     """
     services.validation.rate_edges を、安全に呼び出す薄いラッパ。
@@ -411,7 +416,7 @@ def _rate_edges_simple(edges: List[EdgeEst]) -> List[dict]:
             "direction": "Same",
             "sign": e.sign,
             "type_code": 2,             # 既定で TYPE2
-            "citations": "-",           # RAG 実装時は "DOC#pX, DOC#pY" のように埋める
+            # "citations": "-",           # RAG 実装時は "DOC#pX, DOC#pY" のように埋める
         })
     return rated
 
@@ -420,7 +425,8 @@ def _rated_to_markdown(rated: List[dict]) -> str:
     """評価結果を Markdown テーブルへ整形（UI 側で HTML <table> へレンダリング）。"""
     headers = [
         "source", "target", "effect", "prob",
-        "因果の有無", "因果の向き", "因果の正負", "正負(推定)", "TYPE", "citations"
+        "因果の有無", "因果の向き", "因果の正負", "正負(推定)", "TYPE"
+        # , "citations"
     ]
     sep = "|".join(["---"] * len(headers))
     lines = ["|" + "|".join(headers) + "|", "|" + sep + "|"]
@@ -434,8 +440,8 @@ def _rated_to_markdown(rated: List[dict]) -> str:
             str(r.get("direction", "")),
             str(r.get("sign", "")),              # 「同/違」（評価）
             str(r.get("sign_symbol", "")),       # 「+/-」（推定符号）
-            f"TYPE{int(r.get('type_code', 1))}",
-            str(r.get("citations", "-")),
+            f"TYPE{int(r.get('type_code', 1))}"
+            # , str(r.get("citations", "-")),
         ]
         lines.append("|" + "|".join(row) + "|")
     return "\n".join(lines)
@@ -593,7 +599,13 @@ def run_pipeline_async(run_id: int) -> None:
             Edge.objects.bulk_update(to_update, fields=["type_code"], batch_size=200)
 
         # 評価表（Markdown）— rated が空でも空表にはならずヘッダだけ出る想定
-        md_table = _rated_to_markdown(rated)
+        if rate_edges_llm is not None and build_md_llm is not None:
+            try:
+                md_table = build_md_llm(rated)   # ← eval_has/dir/sign と citations を正しく出力
+            except Exception:
+                md_table = _rated_to_markdown(rated)  # フォールバック
+        else:
+            md_table = _rated_to_markdown(rated)
         art.markdown_table = md_table
         art.save(update_fields=["markdown_table"])
 

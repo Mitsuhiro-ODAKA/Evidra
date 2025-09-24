@@ -1,0 +1,391 @@
+/* ============================================================
+ * Evidra - Global Styles (style.css)
+ * - レイアウト／タイポグラフィ／ボタン／表／チャット／Mermaid 等
+ * - 画面 1920x1080 内でスクロール最小化を目標としつつ、可変対応
+ * ============================================================ */
+
+/* ベース：リセット簡略化 */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  color: #111;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  background: #fafafa;
+}
+
+/* ルート変数：ロゴ/タイトル/説明文サイズ。clampで画面幅に応じて可変 */
+:root{
+  --logo-size:    clamp(64px, 4.2vw, 88px);  /* ロゴを少し大きめ */
+  --title-size:   clamp(28px, 3.0vw, 56px);
+  --subtitle-size:clamp(16px, 1.6vw, 24px);
+
+  --accent-blue:  #1f6feb;  /* ボタン青 */
+  --accent-blue-d:#1a62d2;
+  --danger-red:   #9ca3af;  /* キャンセル赤 */
+  --danger-red-d: #6b7280;
+  --pink:         #e91e63;  /* ステータス文字 */
+  --header-navy:  #0a2a6b;  /* 濃い青のヘッダー */
+}
+
+/* ---------------------------------------
+ * ヘッダー（濃い青・白文字）
+ * ------------------------------------- */
+.app-header{
+  background: var(--header-navy);
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.app-header .brand{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+}
+.app-header .brand-logo{
+  width: var(--logo-size);
+  height: var(--logo-size);
+  object-fit: contain;
+}
+.app-header .app-title{
+  margin: 0;
+  line-height: 1.1;
+  font-size: var(--title-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.app-header .app-subtitle{
+  margin: 6px 0 0 0;
+  font-size: var(--subtitle-size);
+  line-height: 1.5;
+  color: rgba(255,255,255,0.85);
+  max-width: 1200px;
+}
+
+/* ---------------------------------------
+ * ページレイアウト
+ * ------------------------------------- */
+.container{
+  max-width: 1280px; /* 1920画面で左右余白を保持 */
+  margin: 16px auto;
+  padding: 0 16px;
+}
+
+/* セクション見出し */
+.section-title{
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin: 14px 0 10px;
+}
+
+/* ---------------------------------------
+ * 入力ブロック（パラメータ/手法）
+ * ------------------------------------- */
+.form-row{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.form-item label{
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+.form-item input[type="file"],
+.form-item select,
+.form-item input[type="number"],
+.form-item input[type="text"]{
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 10px;
+  background: #fff;
+}
+
+/* ---------------------------------------
+ * アクションボタン（解析開始/キャンセル）
+ * - 右寄せ・やや低めの高さ
+ * ------------------------------------- */
+.action-row{
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0 10px 0;
+}
+.action-row--right{ justify-content: flex-end; }
+
+#startBtn, #cancelBtn {
+  font-size: 1.15rem;       /* 以前より少し小さくして高さを抑える */
+  line-height: 1.2;
+  padding: 12px 24px;       /* 高さダウン */
+  min-width: 200px;
+  min-height: 48px;         /* 以前 56px → 48px に */
+  border-radius: 12px;
+  border: 1px solid transparent;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .12s ease, background-color .12s ease;
+}
+#startBtn{
+  background: var(--accent-blue);
+  color: #fff;
+}
+#startBtn:hover{
+  background: var(--accent-blue-d);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(31,111,235,0.25);
+}
+#startBtn:disabled{
+  background: #b9c6e6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+#cancelBtn{
+  background: var(--danger-red);
+  color: #fff;
+}
+#cancelBtn:hover{
+  background: var(--danger-red-d);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(239,68,68,0.25);
+}
+#startBtn:focus-visible, #cancelBtn:focus-visible{
+  outline: 3px solid rgba(56,189,248,0.8);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------
+ * 進捗バー & ステータス
+ * ------------------------------------- */
+.progress{
+  width: 100%;
+  height: 12px;
+  border-radius: 8px;
+  background: #e9ecef;
+  overflow: hidden;
+}
+#progressBar{
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7dd3fc, #1f6feb);
+  transition: width .3s ease;
+}
+#statusLabel{
+  color: var(--pink);  /* ピンク文字 */
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* ---------------------------------------
+ * プレビュー表（アップロード直後の先頭10行） & Markdown 表
+ * ------------------------------------- */
+.table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.table thead th{
+  background: #f4f6f8;
+  font-weight: 700;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6e6e6;
+}
+.table tbody td{
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table tbody tr:nth-child(even){
+  background: #fbfbfb;
+}
+
+/* citations 展開ボタン（Step2の表で使用） */
+.cite-btn{
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #d7d7d7;
+  background: #fff;
+  cursor: pointer;
+}
+.cite-btn:hover{
+  background: #f1f5f9;
+}
+
+/* ---------------------------------------
+ * Mermaid 図の表示コンテナ
+ * ------------------------------------- */
+.mermaid-container{
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 12px;
+  overflow: auto;      /* 図が大きい場合にスクロール */
+}
+
+/* ---------------------------------------
+ * Plotlyリンク
+ * ------------------------------------- */
+#plotlyLink{
+  display: inline-block;
+  margin-top: 8px;
+  text-decoration: none;
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+#plotlyLink:hover{ text-decoration: underline; }
+
+/* ---------------------------------------
+ * チャット（Step4）
+ * ------------------------------------- */
+#chatLog{
+  height: 260px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 12px;
+}
+.msg{
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin: 6px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
+}
+.msg.user{
+  background: #e3f2fd;
+  align-self: flex-end;
+}
+.msg.assistant{
+  background: #f5f5f5;
+}
+#chatInput{
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d7d7d7;
+  background: #fff;
+}
+.chat-controls{
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ---------------------------------------
+ * レイアウトの細かい余白
+ * ------------------------------------- */
+.block{
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 12px 0;
+}
+
+/* ---------------------------------------
+ * レスポンシブ（幅が狭い場合の列落ち対応）
+ * ------------------------------------- */
+@media (max-width: 1280px){
+  .form-row{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #startBtn, #cancelBtn{
+    font-size: 1.05rem;
+    padding: 10px 20px;
+    min-height: 46px;
+  }
+}
+@media (max-width: 768px){
+  .form-row{
+    grid-template-columns: 1fr;
+  }
+  .action-row--right{ justify-content: stretch; }
+  #chatLog{ height: 220px; }
+}
+
+/* ===== ホームベース形（五角形）とステータス ===== */
+.pentagon-row{
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 40px;              /* 下三角のはみ出しぶん */
+  margin: 12px 0 8px;
+}
+.pentagon{
+  position: relative;
+  background: #0a2a6b;
+  border: 2px solid #0a2a6b;  /* 上・左右の枠線 */
+  /* border-bottom: none;        下は擬似要素で描く */
+  border-radius: 0px 0px 0 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px 12px;    /* 下三角分を内側に確保 */
+  overflow: visible;
+}
+/* 三角の白い塗り */
+.pentagon::before{
+  content:"";
+  position:absolute;
+  left:50%; transform:translateX(-50%);
+  bottom:-30px;
+  width:88px; height:30px;
+  background:#0a2a6b;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  z-index: 1;
+  border-radius: 0 0 10px 10px;
+}
+/* 三角の枠線だけ（下層） */
+.pentagon::after{
+  content:"";
+  position:absolute;
+  border: 2px solid #0a2a6b;
+  left:50%; transform:translateX(-50%);
+  bottom:-32px;               /* 枠線分だけ下げる */
+  width:92px; height:34px;
+  background: transparent;
+  border-left: 2px solid #0a2a6b;
+  border-right: 2px solid #0a2a6b;
+  border-bottom: 2px solid #0a2a6b;
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  z-index: 0;
+  border-radius: 0 0 12px 12px;
+}
+.pentagon-text{
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+  text-align: center;
+  line-height: 1.25;
+}
+.state{
+  color: var(--pink);
+  font-weight: 700;
+  text-align: center;
+  margin: -14px 0 0;
+}
+
+/* TYPE凡例（Step2の下） */
+.type-legend{
+  margin-top: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.type-legend ul{
+  margin: 6px 0 0 18px;
+}

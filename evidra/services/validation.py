@@ -132,8 +132,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
                 "eval_has": bool(v["has"]),
                 "eval_dir": bool(v["dir"]),
                 "eval_sign": bool(v["sign"]),
-                "type_code": int(v["type"]),
-                "citations": []
+                "type_code": int(v["type"])
+                # , "citations": []
             })
         return _dedup_rated(rated)
 
@@ -151,8 +151,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
             "eval_has": bool(v["has"]),
             "eval_dir": bool(v["dir"]),
             "eval_sign": bool(v["sign"]),
-            "type_code": int(v["type"]),
-            "citations": []
+            "type_code": int(v["type"])
+            # , "citations": []
         })
 
     # --- 残り時間の算出 ---
@@ -169,8 +169,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
                 "eval_has": bool(v["has"]),
                 "eval_dir": bool(v["dir"]),
                 "eval_sign": bool(v["sign"]),
-                "type_code": int(v["type"]),
-                "citations": []
+                "type_code": int(v["type"])
+                # , "citations": []
             }
         # RAG 取得（任意）
         contexts: List[Dict] = []
@@ -190,8 +190,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
                 "eval_has": bool(verdict.get("has", True)),
                 "eval_dir": bool(verdict.get("dir", True)),
                 "eval_sign": bool(verdict.get("sign", True)),
-                "type_code": t,
-                "citations": cites
+                "type_code": t
+                # , "citations": cites
             }
         except Exception:
             v = heuristic_verdict(e)
@@ -200,8 +200,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
                 "eval_has": bool(v["has"]),
                 "eval_dir": bool(v["dir"]),
                 "eval_sign": bool(v["sign"]),
-                "type_code": int(v["type"]),
-                "citations": []
+                "type_code": int(v["type"])
+                # , "citations": []
             }
 
     # スレッド数は CPU 論理コアや件数で適度に（過剰並列を避ける）
@@ -229,8 +229,8 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
                 "eval_has": bool(v["has"]),
                 "eval_dir": bool(v["dir"]),
                 "eval_sign": bool(v["sign"]),
-                "type_code": int(v["type"]),
-                "citations": []
+                "type_code": int(v["type"])
+                # , "citations": []
             })
 
     return _dedup_rated(rated)
@@ -238,15 +238,15 @@ def evaluate_edges(edges: List[Dict], rag_present: bool) -> List[Dict]:
 # ===== Markdown 生成 =====
 def build_markdown_table(rated_edges: List[Dict]) -> str:
     lines = []
-    header = "| source | target | effect | prob | sign | 因果の有無 | 向き | 正負 | TYPE | citations |"
+    header = "| source | target | effect | prob | sign | 因果の有無 | 向き | 正負 | TYPE |"
     sep = "|---|---:|---:|---:|:---:|:---:|:---:|:---:|:---:|:---|"
     lines.append(header); lines.append(sep)
     for e in rated_edges:
         has = "Yes" if e.get('eval_has', True) else "No"
         d = "同" if e.get('eval_dir', True) else "違"
         s = "同" if e.get('eval_sign', True) else "違"
-        cite = ", ".join([f"{c['doc_id']}#{c['page']}:{c['snippet_id']}" for c in e.get('citations', [])]) or "-"
-        lines.append(f"| {e['source']} | {e['target']} | {e['effect']:.3f} | {e['prob']:.2f} | {e.get('sign','+')} | {has} | {d} | {s} | TYPE{int(e.get('type_code',2))} | {cite} |")
+        # cite = ", ".join([f"{c['doc_id']}#{c['page']}:{c['snippet_id']}" for c in e.get('citations', [])]) or "-"
+        lines.append(f"| {e['source']} | {e['target']} | {e['effect']:.3f} | {e['prob']:.2f} | {e.get('sign','+')} | {has} | {d} | {s} | TYPE{int(e.get('type_code',2))} |")
     return "\n".join(lines)
 
 # ===== tasks.py から呼ばれる互換API =====

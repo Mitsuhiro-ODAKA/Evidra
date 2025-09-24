@@ -23,8 +23,8 @@ html, body {
 
   --accent-blue:  #1f6feb;  /* ボタン青 */
   --accent-blue-d:#1a62d2;
-  --danger-red:   #ef4444;  /* キャンセル赤 */
-  --danger-red-d: #dc2626;
+  --danger-red:   #9ca3af;  /* キャンセル赤 */
+  --danger-red-d: #6b7280;
   --pink:         #e91e63;  /* ステータス文字 */
   --header-navy:  #0a2a6b;  /* 濃い青のヘッダー */
 }
@@ -151,7 +151,7 @@ html, body {
 #cancelBtn:hover{
   background: var(--danger-red-d);
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(239,68,68,0.25);
+  box-shadow: 0 8px 18px rgba(94, 94, 94, 0.25);
 }
 #startBtn:focus-visible, #cancelBtn:focus-visible{
   outline: 3px solid rgba(56,189,248,0.8);
