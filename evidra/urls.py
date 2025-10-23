@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
 
-    # ← スラ無し/有りの両方を用意（フロントは /api/upload-data を呼んでいる）
+    # ← スラッシュ無し/有りの両方を用意（フロントは /api/upload-data を呼んでいる）
     path('api/upload-data', views.upload_data),
     path('api/upload-data/', views.upload_data),
 
